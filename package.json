@@ -1,0 +1,19 @@
+{
+  "name": "rabbit-interceptor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devstate-sdsu/rabbit-interceptor.git"
+  },
+  "author": "DevState Development Studio",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/devstate-sdsu/rabbit-interceptor/issues"
+  },
+  "homepage": "https://github.com/devstate-sdsu/rabbit-interceptor#readme"
+}
