@@ -4,8 +4,20 @@ const URL = require("url-parse");
 const admin = require("firebase-admin");
 const moment = require("moment");
 
+admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    databaseURL: 'https://rabbitbums.firebaseio.com'
+});
 
-main().then((res) => console.log("THIS IS RESULT: ", res));
+let db = admin.firestore();
+
+main().then((res) => {
+    res.forEach((event) => {
+        db.collection('testEventsCol').add(event).then(ref => {
+            console.log('Added document with ID: ', ref.id);
+        })
+    });
+});
 
 async function main() {
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
@@ -51,12 +63,13 @@ function collectEvents($, crossYear, pageNum) {
         objAry.push(newObj);
     });
 
-    // Scrape description
+    // Scrape description & add summary
     const descriptionToken = 'div.featured-list-item__content:has(h3.featured-list-item__title)';
     $(descriptionToken).each((idx, elem) => {
         let str = $(elem).find('p').text();
         str = str.trim();
         objAry[idx]['description'] = str;
+        objAry[idx]['summary'] = str.slice(0, Math.min(str.length, 140));      // Follow twitter rules plz
     });
 
     // Scrape location
