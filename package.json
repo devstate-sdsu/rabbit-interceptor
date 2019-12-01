@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/devstate-sdsu/rabbit-interceptor/issues"
   },
-  "homepage": "https://github.com/devstate-sdsu/rabbit-interceptor#readme"
+  "homepage": "https://github.com/devstate-sdsu/rabbit-interceptor#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "request": "^2.88.0",
+    "url-parse": "^1.4.7"
+  }
 }
