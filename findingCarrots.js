@@ -28,7 +28,7 @@ function collectEvents($) {
         const newObj = {};
         let str = $(elem).text();
         str = str.trim();
-        newObj['title'] = str;
+        newObj['name'] = str;
         objAry.push(newObj);
     });
 
@@ -64,8 +64,28 @@ function collectEvents($) {
         const newStartTime = objWithDate.setTime(objWithStartTime.getTime());
         const newEndTime = objWithDate.setTime(objWithEndTime.getTime());
 
-        objAry[idx]['start_time'] = admin.firestore.Timestamp.fromDate(new Date(newStartTime));
-        objAry[idx]['end_time'] = admin.firestore.Timestamp.fromDate(new Date(newEndTime));
+        objAry[idx]['time'] = []
+        objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(newStartTime)));
+        objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(newEndTime)));
+        // Set time updated
+        objAry[idx]['time_updated'] = admin.firestore.Timestamp.fromDate(new Date());
+        // Set update note
+        objAry[idx]['updates'] = "Re-scraped from the university website";
+    });
+
+    // Scrape img url
+    const imgToken = 'li.featured-list-item:has(h3.featured-list-item__title)';
+    console.log("IMG TOKEN LENGTH: ", $(imgToken).length);
+    $(imgToken).each((idx, elem) => {
+        console.log("ARE WE HERE");
+        let str = $(elem).find('img.b-lazy').attr('data-src');
+        console.log(str);
+        if (str) {
+            str = str.trim();
+            objAry[idx]['image'] = 'https://www.sdstate.edu' + str;
+        } else {
+            objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/images/Mon-19/Artboard%205%402x_1.png';
+        }
     });
 
     console.log(">>> RESULT: ");
