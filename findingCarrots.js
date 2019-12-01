@@ -9,6 +9,10 @@ main().then((res) => console.log("THIS IS RESULT: ", res));
 
 async function main() {
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
+    const crossYear = {
+        firstEventIsJan: true,
+        incrementNow : false,
+    };
     let masterAry = [];
     for (let i = 0; i < 15; i++) {
         const pageToVisit = base + i.toString();
@@ -22,7 +26,7 @@ async function main() {
                 // Parse the document body
                 let $ = cheerio.load(body);
                 console.log("Page title: " + $('title').text());
-                const aryFromPage = collectEvents($);
+                const aryFromPage = collectEvents($, crossYear, i);
                 if (aryFromPage.length === 0) {
                     return masterAry;
                 } else {
@@ -34,7 +38,7 @@ async function main() {
     return masterAry;
 }
 
-function collectEvents($, baseYear) {
+function collectEvents($, crossYear, pageNum) {
     const objAry = [];
 
     // Scrape title
@@ -74,15 +78,29 @@ function collectEvents($, baseYear) {
         const startTime = str.slice(commaIdx + 1, dashIdx);
         const endTime = str.slice(dashIdx + 1);
         const objWithDate = moment(dayMonth, ['MMM. D', 'MMM. DD']).toDate();
+        if (objWithDate.getMonth() !== 0 && pageNum === 0 && idx === 0) {
+            crossYear.firstEventIsJan = false;
+        }
+        if (objWithDate.getMonth() === 0 && crossYear.firstEventIsJan === false) {
+            crossYear.incrementNow = true;
+        }
         const objWithStartTime = moment(startTime, ['hh:mm a', 'h:mm a']).toDate();
         const objWithEndTime = moment(endTime, ['hh:mm a', 'h:mm a']).toDate();
-        const newStartTime = objWithDate.setTime(objWithStartTime.getTime());
-        const newEndTime = objWithDate.setTime(objWithEndTime.getTime());
+        objWithStartTime.setMonth(objWithDate.getMonth());
+        objWithEndTime.setMonth(objWithDate.getMonth());
+        objWithStartTime.setDate(objWithDate.getDay());
+        objWithEndTime.setDate(objWithDate.getDay());
+        if (crossYear.incrementNow) {
+            const year = objWithStartTime.getFullYear();
+            objWithStartTime.setFullYear(year + 1);
+            objWithEndTime.setFullYear(year + 1);
+        }
 
         objAry[idx]['time'] = []
         try {
-            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(newStartTime)));
-            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(newEndTime)));
+            console.log("START TIME: " + moment(objWithStartTime).format('YYYY MM DD'));
+            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(objWithStartTime)));
+            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(objWithEndTime)));
         } catch {
             objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date()));
             objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date()));
@@ -95,11 +113,8 @@ function collectEvents($, baseYear) {
 
     // Scrape img url
     const imgToken = 'li.featured-list-item:has(h3.featured-list-item__title)';
-    console.log("IMG TOKEN LENGTH: ", $(imgToken).length);
     $(imgToken).each((idx, elem) => {
-        console.log("ARE WE HERE");
         let str = $(elem).find('img.b-lazy').attr('data-src');
-        console.log(str);
         if (str) {
             str = str.trim();
             objAry[idx]['image'] = 'https://www.sdstate.edu' + str;
