@@ -24,7 +24,7 @@ async function main() {
                 console.log("Page title: " + $('title').text());
                 const aryFromPage = collectEvents($);
                 if (aryFromPage.length === 0) {
-                    return;
+                    return masterAry;
                 } else {
                     masterAry = masterAry.concat(aryFromPage);
                 }
