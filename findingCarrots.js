@@ -10,7 +10,7 @@ main().then((res) => console.log("THIS IS RESULT: ", res));
 async function main() {
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
     let masterAry = [];
-    for (let i = 0; i < 11 ; i++) {
+    for (let i = 0; i < 15; i++) {
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
         await request(pageToVisit, function(error, response, body) {
