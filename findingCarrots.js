@@ -141,13 +141,12 @@ async function collectEvents($, crossYear, pageNum) {
             objWithEndTime.setFullYear(year + 1);
         }
 
-        objAry[idx]['time'] = []
         try {
-            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(objWithStartTime)));
-            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(objWithEndTime)));
+            objAry[idx]['start_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithStartTime));
+            objAry[idx]['end_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithEndTime));
         } catch {
-            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date()));
-            objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date()));
+            objAry[idx]['start_time'] = admin.firestore.Timestamp.fromDate(new Date());
+            objAry[idx]['end_time'] = admin.firestore.Timestamp.fromDate(new Date());
         }
         // Set time updated
         objAry[idx]['time_updated'] = admin.firestore.Timestamp.fromDate(new Date());
