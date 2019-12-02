@@ -11,47 +11,53 @@ admin.initializeApp({
 
 let db = admin.firestore();
 
-main().then((res) => {
+scrapeFromMainPage().then((res) => {
     res.forEach((event) => {
-        db.collection('testEventsCol').add(event).then(ref => {
-            console.log('Added document with ID: ', ref.id);
-        })
+        // db.collection('testEventsCol').add(event).then(ref => {
+        //     console.log('Added document with ID: ', ref.id);
+        // })
+        console.log("BIG LOCATION: ", event.big_location);
+        console.log("TINY LOCATION: ", event.tiny_location);
     });
 });
 
-async function main() {
+async function scrapeFromMainPage() {
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
     const crossYear = {
         firstEventIsJan: true,
         incrementNow : false,
     };
     let masterAry = [];
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 1; i++) {
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
-        await request(pageToVisit, function(error, response, body) {
-            if (error) {
-                console.log("Error: " + error);
-            }
-            console.log("Status code: " + response.statusCode);
-            if (response.statusCode == 200) {
-                // Parse the document body
-                let $ = cheerio.load(body);
-                console.log("Page title: " + $('title').text());
-                const aryFromPage = collectEvents($, crossYear, i);
-                if (aryFromPage.length === 0) {
-                    return masterAry;
-                } else {
-                    masterAry = masterAry.concat(aryFromPage);
-                }
-            }
-        });
+        masterAry = await collectEventsPromise(pageToVisit, masterAry, crossYear, i);
     }
     return masterAry;
 }
 
-function collectEvents($, crossYear, pageNum) {
+async function collectEventsPromise(pageToVisit, masterAry, crossYear, i) {
+    return new Promise((resolve, reject) => {
+        request(pageToVisit).then((body) => {
+            let $ = cheerio.load(body);
+            console.log("Page title: " + $('title').text());
+            collectEvents($, crossYear, i).then((result) => {
+                if (result.length === 0) {
+                    resolve(masterAry);
+                } else if (result.length > 0) {
+                    resolve(masterAry.concat(result));
+                }
+            });
+        }).catch(e => {
+            console.log("ERROR COLLECTING EVENTS: " + e);
+        });
+    });
+}
+
+async function collectEvents($, crossYear, pageNum) {
     const objAry = [];
+    const detailBase = "https://www.sdstate.edu";
+    const detailUrlAry = [];
 
     // Scrape title
     const titleToken = '.featured-list-item__title>a';
@@ -60,8 +66,40 @@ function collectEvents($, crossYear, pageNum) {
         let str = $(elem).text();
         str = str.trim();
         newObj['name'] = str;
+        const detailUrl = detailBase + $(elem).attr('href');
+        detailUrlAry.push(detailUrl);
         objAry.push(newObj);
     });
+
+    // Scrape location from detail page
+    for (let i = 0; i < detailUrlAry.length; i++) {
+        const url = detailUrlAry[i];
+        await request(url)
+        .then((body) => {
+            let $$ = cheerio.load(body);
+            const locationToken = 'span.event__detail:has(a)';
+            $$(locationToken).each((idx, elem) => {
+                let str = $$(elem).text();
+                str = str.trim();
+                const locationCommaIdx = str.indexOf(',');
+                let bigLocation = '';
+                let tinyLocation = '';
+                if (locationCommaIdx != -1) {
+                    bigLocation = str.slice(0, locationCommaIdx);
+                    tinyLocation = str.slice(locationCommaIdx + 1);
+                } else {
+                    bigLocation = str;
+                }
+                bigLocation = bigLocation.trim();
+                tinyLocation = tinyLocation.trim();
+                objAry[i]['big_location'] = bigLocation;
+                objAry[i]['tiny_location'] = tinyLocation;
+            }); 
+
+        }).catch((e) => {
+            console.log("ERROR SCRAPING FROM DETAIL PAGE: " + e);
+        });
+    }
 
     // Scrape description & add summary
     const descriptionToken = 'div.featured-list-item__content:has(h3.featured-list-item__title)';
@@ -70,14 +108,6 @@ function collectEvents($, crossYear, pageNum) {
         str = str.trim();
         objAry[idx]['description'] = str;
         objAry[idx]['summary'] = str.slice(0, Math.min(str.length, 140));      // Follow twitter rules plz
-    });
-
-    // Scrape location
-    const locationToken = 'div.featured-list-item__content:has(h3.featured-list-item__title)';
-    $(locationToken).each((idx, elem) => {
-        let str = $(elem).find('span.metadata--event').slice(1).text();
-        str = str.trim();
-        objAry[idx]['location'] = str;
     });
 
     // Scrape time
@@ -111,7 +141,6 @@ function collectEvents($, crossYear, pageNum) {
 
         objAry[idx]['time'] = []
         try {
-            console.log("START TIME: " + moment(objWithStartTime).format('YYYY MM DD'));
             objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(objWithStartTime)));
             objAry[idx]['time'].push(admin.firestore.Timestamp.fromDate(new Date(objWithEndTime)));
         } catch {
