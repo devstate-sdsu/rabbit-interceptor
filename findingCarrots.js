@@ -13,11 +13,13 @@ let db = admin.firestore();
 
 scrapeFromMainPage().then((res) => {
     res.forEach((event) => {
-        // db.collection('testEventsCol').add(event).then(ref => {
-        //     console.log('Added document with ID: ', ref.id);
-        // })
-        console.log("BIG LOCATION: ", event.big_location);
-        console.log("TINY LOCATION: ", event.tiny_location);
+        db.collection('eventsCol').add(event).then(ref => {
+            console.log('Added document with ID: ', ref.id);
+        }).catch(e => {
+            console.log("ERROR WITH FIRESTORE: " + e);
+        });
+        // console.log("BIG LOCATION: ", event.big_location);
+        // console.log("TINY LOCATION: ", event.tiny_location);
     });
 });
 
@@ -28,7 +30,7 @@ async function scrapeFromMainPage() {
         incrementNow : false,
     };
     let masterAry = [];
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 15; i++) {
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
         masterAry = await collectEventsPromise(pageToVisit, masterAry, crossYear, i);
