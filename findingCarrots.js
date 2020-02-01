@@ -18,8 +18,6 @@ scrapeFromMainPage().then((res) => {
         }).catch(e => {
             console.log("ERROR WITH FIRESTORE: " + e);
         });
-        // console.log("BIG LOCATION: ", event.big_location);
-        // console.log("TINY LOCATION: ", event.tiny_location);
     });
 });
 
@@ -160,9 +158,44 @@ async function collectEvents($, crossYear, pageNum) {
         let str = $(elem).find('img.b-lazy').attr('data-src');
         if (str) {
             str = str.trim();
-            objAry[idx]['image'] = 'https://www.sdstate.edu' + str;
+            // Having the following url means that it is a sporting event.
+            if (str.startsWith('/sites/default/files/styles/teaser_image_/public/2019-09/jacks%20Logo_0.jpg')) {
+                if (objAry[idx]['big_location'].includes('Frost Arena')) {
+                    objAry[idx]['image'] = 'https://gojacks.com/images/2016/6/16/20090123tpc_003.jpg?width=500&height=300&mode=crop';
+                } else if (objAry[idx]['big_location'].includes('University Student Union')) {
+                    objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/styles/hero_extra_large/public/2018-10/2018_Students%20outside%20of%20Union_3571x2380.jpg';
+                } else if (objAry[idx]['big_location'].includes('Wellness Center')) {
+                    objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/2019-01/WCExpansionBannerHighRes.jpg';
+                } else if (objAry[idx]['big_location'].includes('Dykhouse Stadium')) {
+                    objAry[idx]['image'] = 'https://gojacks.com/images/2016/8/11/Stadium_Open_House_Teaser.jpg?width=500&height=300&mode=crop';
+                } else {
+                    objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/styles/card_large/public/hero/OverviewOfCampus.jpg';
+                }
+            } else {
+                objAry[idx]['image'] = 'https://www.sdstate.edu' + str;                
+            }
         } else {
-            objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/images/Mon-19/Artboard%205%402x_1.png';
+            if (objAry[idx]['big_location'].includes('Frost Arena')) {
+                objAry[idx]['image'] = 'https://gojacks.com/images/2016/6/16/20090123tpc_003.jpg?width=500&height=300&mode=crop';
+            } else if (objAry[idx]['big_location'].includes('University Student Union')) {
+                objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/styles/hero_extra_large/public/2018-10/2018_Students%20outside%20of%20Union_3571x2380.jpg';
+            } else if (objAry[idx]['big_location'].includes('Wellness Center')) {
+                objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/2019-01/WCExpansionBannerHighRes.jpg';
+            } else if (objAry[idx]['big_location'].includes('Dykhouse Stadium')) {
+                objAry[idx]['image'] = 'https://gojacks.com/images/2016/8/11/Stadium_Open_House_Teaser.jpg?width=500&height=300&mode=crop';
+            } else if (objAry[idx]['big_location'].includes('Performing Arts Center')) {
+                objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/styles/hero_extra_large/public/2019-08/PAC%20Larson%20Concert%20Hall.jpg';
+            } else if (objAry[idx]['big_location'].includes('Library')) {
+                objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/images/Tue-19/Briggs%20Library%20with%20flowers.jpg';
+            } else if (objAry[idx]['big_location'].includes('Avera')) {
+                objAry[idx]['image'] = 'https://i.ytimg.com/vi/KtX8Q79Heqk/maxresdefault.jpg';
+            } else if (objAry[idx]['big_location'].includes('Daktronics')) {
+                objAry[idx]['image'] = 'https://i.ytimg.com/vi/u3pwzl8nTLA/maxresdefault.jpg';
+            } else if (objAry[idx]['big_location'].includes('Solberg')) {
+                objAry[idx]['image'] = 'https://i.ytimg.com/vi/3hU3fEioA88/maxresdefault.jpg';
+            } else {
+                objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/styles/card_large/public/hero/OverviewOfCampus.jpg';
+            }
         }
     });
     return objAry;
