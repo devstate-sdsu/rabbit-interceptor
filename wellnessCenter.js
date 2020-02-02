@@ -75,16 +75,10 @@ async function collectEvents($) {
 			break;
 		}
 		startDate.set('year', intYearAry[idx]);
-		let endDate = moment(startDate);
-		endDate.add(6, 'days');
+		let endDate = moment(startDate).add(6, 'days');
 		const today = moment();
-		console.log(today);
-		console.log(startDate);
-		console.log(endDate);
-		console.log((today.isAfter(startDate) && today.isBefore(endDate.add(1, 'days'))));
 		if(today.isSame(startDate) || (today.isAfter(startDate) && today.isBefore(endDate.add(1, 'days')))) {
 			i = temp;
-			console.log("WE HERE")
 		}
 		// Incrementing by 49 because each week has 49 sets of hours, with 7 of them being facility hours.
 		temp += 49;
