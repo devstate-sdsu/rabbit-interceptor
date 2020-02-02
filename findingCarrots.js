@@ -66,6 +66,7 @@ async function collectEvents($, crossYear, pageNum) {
         let str = $(elem).text();
         str = str.trim();
         newObj['name'] = str;
+        newObj['tags'] = []
         const detailUrl = detailBase + $(elem).attr('href');
         detailUrlAry.push(detailUrl);
         objAry.push(newObj);
@@ -152,14 +153,15 @@ async function collectEvents($, crossYear, pageNum) {
         objAry[idx]['updates'] = "Re-scraped from the university website";
     });
 
-    // Scrape img url
+    // Scrape img url and append tag for sporting events
     const imgToken = 'li.featured-list-item:has(h3.featured-list-item__title)';
     $(imgToken).each((idx, elem) => {
         let str = $(elem).find('img.b-lazy').attr('data-src');
         if (str) {
             str = str.trim();
             // Having the following url means that it is a sporting event.
-            if (str.startsWith('/sites/default/files/styles/teaser_image_/public/2019-09/jacks%20Logo_0.jpg')) {
+            if (str.startsWith('/sites/default/files/styles/teaser_image_/public/2019-09/jacks%20Logo_0.jpg' ||
+                str.startsWith('/sites/default/files/styles/teaser_image_/public/2018-11/Logo_2.jpg'))) {
                 if (objAry[idx]['big_location'].includes('Frost Arena')) {
                     objAry[idx]['image'] = 'https://gojacks.com/images/2016/6/16/20090123tpc_003.jpg?width=500&height=300&mode=crop';
                 } else if (objAry[idx]['big_location'].includes('University Student Union')) {
@@ -171,6 +173,7 @@ async function collectEvents($, crossYear, pageNum) {
                 } else {
                     objAry[idx]['image'] = 'https://www.sdstate.edu/sites/default/files/styles/card_large/public/hero/OverviewOfCampus.jpg';
                 }
+                objAry[idx]['tags'].push('sporting');
             } else {
                 objAry[idx]['image'] = 'https://www.sdstate.edu' + str;                
             }
