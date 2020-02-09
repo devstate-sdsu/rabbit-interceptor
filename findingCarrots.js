@@ -4,16 +4,20 @@ const URL = require("url-parse");
 const admin = require("firebase-admin");
 const moment = require("moment");
 
+
 admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    databaseURL: 'https://rabbitbums.firebaseio.com'
-});
+    credential: admin.credential.cert({
+      "private_key": process.env.FIREBASE_PRIVATE_KEY,
+      "client_email": process.env.FIREBASE_CLIENT_EMAIL,
+    }),
+    databaseURL: "https://rabbitbums.firebaseio.com/"
+  });
 
 let db = admin.firestore();
 
 scrapeFromMainPage().then((res) => {
     res.forEach((event) => {
-        db.collection('eventsCol').add(event).then(ref => {
+        db.collection('autotestCol').add(event).then(ref => {
             console.log('Added document with ID: ', ref.id);
         }).catch(e => {
             console.log("ERROR WITH FIRESTORE: " + e);
