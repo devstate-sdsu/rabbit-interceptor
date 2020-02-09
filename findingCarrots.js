@@ -13,7 +13,7 @@ let db = admin.firestore();
 
 scrapeFromMainPage().then((res) => {
     res.forEach((event) => {
-        db.collection('eventsCol').add(event).then(ref => {
+        db.collection('autotestCol').add(event).then(ref => {
             console.log('Added document with ID: ', ref.id);
         }).catch(e => {
             console.log("ERROR WITH FIRESTORE: " + e);
