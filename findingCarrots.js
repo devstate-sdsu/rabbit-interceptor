@@ -6,24 +6,22 @@ const moment = require("moment");
 
 
 admin.initializeApp({
-    credential: admin.credential.cert({
-      "private_key": process.env.FIREBASE_PRIVATE_KEY,
-      "client_email": process.env.FIREBASE_CLIENT_EMAIL,
-      "project_id": process.env.FIREBASE_PROJECT_ID
-    }),
+    credential: admin.credential.applicationDefault(),
     databaseURL: "https://rabbitbums.firebaseio.com/"
   });
 
 let db = admin.firestore();
 
 scrapeFromMainPage().then((res) => {
-    res.forEach((event) => {
-        db.collection('autotestCol').add(event).then(ref => {
+    for (let i = 0; i < res.documents.length; i++) {
+        event = res.documents[i];
+        id = res.documentIds[i];
+        db.collection('testEventsCol').doc(id).set(event).then(ref => {
             console.log('Added document with ID: ', ref.id);
         }).catch(e => {
             console.log("ERROR WITH FIRESTORE: " + e);
         });
-    });
+    }
 });
 
 async function scrapeFromMainPage() {
@@ -32,25 +30,35 @@ async function scrapeFromMainPage() {
         firstEventIsJan: true,
         incrementNow : false,
     };
-    let masterAry = [];
+    let masterObj = {};
+    masterObj['documents'] = [];
+    masterObj['documentIds'] = [];
     for (let i = 0; i < 15; i++) {
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
-        masterAry = await collectEventsPromise(pageToVisit, masterAry, crossYear, i);
+        masterObj = await collectEventsPromise(pageToVisit, masterObj, crossYear, i);
     }
-    return masterAry;
+    return masterObj;
 }
 
-async function collectEventsPromise(pageToVisit, masterAry, crossYear, i) {
+async function collectEventsPromise(pageToVisit, masterObj, crossYear, i) {
+    masterAry = masterObj.documents;
+    masterIdAry = masterObj.documentIds;
     return new Promise((resolve, reject) => {
         request(pageToVisit).then((body) => {
             let $ = cheerio.load(body);
             console.log("Page title: " + $('title').text());
             collectEvents($, crossYear, i).then((result) => {
-                if (result.length === 0) {
-                    resolve(masterAry);
-                } else if (result.length > 0) {
-                    resolve(masterAry.concat(result));
+                if (result.documents.length === 0) {
+                    resolve({
+                        documents: masterAry,
+                        documentIds: masterIdAry
+                    });
+                } else if (result.documents.length > 0) {
+                    resolve({
+                        documents: masterAry.concat(result.documents),
+                        documentIds: masterIdAry.concat(result.documentIds)
+                    });
                 }
             });
         }).catch(e => {
@@ -61,6 +69,7 @@ async function collectEventsPromise(pageToVisit, masterAry, crossYear, i) {
 
 async function collectEvents($, crossYear, pageNum) {
     const objAry = [];
+    const idAry = [];
     const detailBase = "https://www.sdstate.edu";
     const detailUrlAry = [];
 
@@ -75,9 +84,10 @@ async function collectEvents($, crossYear, pageNum) {
         const detailUrl = detailBase + $(elem).attr('href');
         detailUrlAry.push(detailUrl);
         objAry.push(newObj);
+        idAry.push('');
     });
 
-    // Scrape location from detail page
+    // Scrape location and unique post id (event id) from detail page
     for (let i = 0; i < detailUrlAry.length; i++) {
         const url = detailUrlAry[i];
         await request(url)
@@ -101,6 +111,11 @@ async function collectEvents($, crossYear, pageNum) {
                 objAry[i]['big_location'] = bigLocation;
                 objAry[i]['tiny_location'] = tinyLocation;
             }); 
+            const idToken = '[itemprop="acquia_lift:content_uuid"]';
+            $$(idToken).each((idx, elem) => {
+                let id = $(elem).attr('content');
+                idAry[i] = id;
+            });
 
         }).catch((e) => {
             console.log("ERROR SCRAPING FROM DETAIL PAGE: " + e);
@@ -206,5 +221,9 @@ async function collectEvents($, crossYear, pageNum) {
             }
         }
     });
-    return objAry;
+    console.log(idAry);
+    return {
+        documents: objAry,
+        documentIds: idAry
+    };
 }
