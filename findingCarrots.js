@@ -201,7 +201,11 @@ async function collectEvents($, pageNum) {
             $$(descriptionToken).each((idx, elem) => {
                 let str = $(elem).find('p').text();
                 str = str.trim();
-                objAry[i]['description'] = str.slice(0, Math.min(str.length, 2000));
+                if (str.length > 1997) {
+                    objAry[i]['description'] = str.slice(0, 1998) + '...';
+                } else {
+                    objAry[i]['description'] = str;
+                }
                 objAry[i]['summary'] = str.slice(0, Math.min(str.length, 140));      // Follow twitter rules plz
             });
 
