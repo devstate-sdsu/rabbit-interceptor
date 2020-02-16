@@ -16,7 +16,7 @@ scrapeFromMainPage().then((res) => {
     for (let i = 0; i < res.documents.length; i++) {
         event = res.documents[i];
         id = res.documentIds[i];
-        db.collection('testEventsCol').doc(id).set(event).then(ref => {
+        db.collection('eventsCol').doc(id).set(event).then(ref => {
             console.log('Added document with ID: ', ref.id);
         }).catch(e => {
             console.log("ERROR WITH FIRESTORE: " + e);
@@ -26,29 +26,25 @@ scrapeFromMainPage().then((res) => {
 
 async function scrapeFromMainPage() {
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
-    const crossYear = {
-        firstEventIsJan: true,
-        incrementNow : false,
-    };
     let masterObj = {};
     masterObj['documents'] = [];
     masterObj['documentIds'] = [];
     for (let i = 0; i < 15; i++) {
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
-        masterObj = await collectEventsPromise(pageToVisit, masterObj, crossYear, i);
+        masterObj = await collectEventsPromise(pageToVisit, masterObj, i);
     }
     return masterObj;
 }
 
-async function collectEventsPromise(pageToVisit, masterObj, crossYear, i) {
+async function collectEventsPromise(pageToVisit, masterObj, i) {
     masterAry = masterObj.documents;
     masterIdAry = masterObj.documentIds;
     return new Promise((resolve, reject) => {
         request(pageToVisit).then((body) => {
             let $ = cheerio.load(body);
             console.log("Page title: " + $('title').text());
-            collectEvents($, crossYear, i).then((result) => {
+            collectEvents($, i).then((result) => {
                 if (result.documents.length === 0) {
                     resolve({
                         documents: masterAry,
@@ -67,7 +63,7 @@ async function collectEventsPromise(pageToVisit, masterObj, crossYear, i) {
     });
 }
 
-async function collectEvents($, crossYear, pageNum) {
+async function collectEvents($, pageNum) {
     const objAry = [];
     const idAry = [];
     const detailBase = "https://www.sdstate.edu";
@@ -87,12 +83,14 @@ async function collectEvents($, crossYear, pageNum) {
         idAry.push('');
     });
 
-    // Scrape location and unique post id (event id) from detail page
+    // Go into details page
     for (let i = 0; i < detailUrlAry.length; i++) {
         const url = detailUrlAry[i];
         await request(url)
         .then((body) => {
             let $$ = cheerio.load(body);
+
+            // Scrape location
             const locationToken = 'span.event__detail:has(a)';
             $$(locationToken).each((idx, elem) => {
                 let str = $$(elem).text();
@@ -111,67 +109,112 @@ async function collectEvents($, crossYear, pageNum) {
                 objAry[i]['big_location'] = bigLocation;
                 objAry[i]['tiny_location'] = tinyLocation;
             }); 
+
+            // Scrape id
             const idToken = '[itemprop="acquia_lift:content_uuid"]';
             $$(idToken).each((idx, elem) => {
                 let id = $(elem).attr('content');
                 idAry[i] = id;
             });
 
+            // Scrape date time
+            var startDate = '';
+            var endDate = '';
+            var startTime = '';
+            var endTime = '';
+            const dateTimeToken = 'span.event__detail';
+            $$(dateTimeToken).each((idx, elem) => {
+                if (idx == 0) {            
+                    var dateDashIdxs = [];
+                    var dateStr = $(elem).text();
+                    dateStr = dateStr.trim();
+                    for (var i = 0; i < dateStr.length; i++) {
+                        if (dateStr[i] === '–') {
+                            dateDashIdxs.push(i);
+                        }
+                    }
+                    if (dateDashIdxs.length == 1) {
+                        startDate = dateStr.slice(0, dateDashIdxs[0]).trim()
+                        endDate = dateStr.slice(dateDashIdxs[0] + 1).trim()
+                    } else {
+                        startDate = dateStr;
+                        endDate = dateStr;
+                    }
+                }
+                if (idx == 1) {
+                    var dashIdx = -1;
+                    var timeStr = $(elem).text();
+                    timeStr = timeStr.trim();
+                    dashIdx = timeStr.indexOf('–');
+                    startTime = timeStr.slice(0, dashIdx);
+                    startTime = timeStr.trim();
+                    endTime = timeStr.slice(dashIdx + 1);
+                    endTime = endTime.trim();
+                }
+            });
+            const objWithStartDateMoment = moment(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
+            if (!objWithStartDateMoment.isValid()) {
+                objAry[i]['start_date_uncertain'] == true;
+            } else {
+                objAry[i]['start_date_uncertain'] == false;
+            }
+            const objWithStartDate = objWithStartDateMoment.toDate();
+            const objWithEndDateMoment = moment(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
+            if (!objWithEndDateMoment.isValid()) {
+                objAry[i]['end_date_uncertain'] == true;
+            } else {
+                objAry[i]['end_date_uncertain'] == false;
+            }
+            const objWithEndDate = objWithEndDateMoment.toDate();
+            const objWithStartTimeMoment = moment(startTime, ['hh:mm a', 'h:mm a']);
+            if (!objWithStartTimeMoment.isValid()) {
+                objAry[i]['start_time_uncertain'] = true;
+            } else {
+                objAry[i]['start_time_uncertain'] = false;
+            }
+            const objWithStartTime = objWithStartTimeMoment.toDate();
+            const objWithEndTimeMoment = moment(endTime, ['hh:mm a', 'h:mm a']);
+            if (!objWithEndTimeMoment.isValid()) {
+                objAry[i]['end_time_uncertain'] = true;
+            } else {
+                objAry[i]['end_time_uncertain'] = false;
+            }
+            const objWithEndTime = objWithEndTimeMoment.toDate();
+            objWithStartTime.setFullYear(objWithStartDate.getFullYear());
+            objWithStartTime.setMonth(objWithStartDate.getMonth());
+            objWithStartTime.setDate(objWithStartDate.getDate());
+            objWithEndTime.setFullYear(objWithEndDate.getFullYear());
+            objWithEndTime.setMonth(objWithEndDate.getMonth());
+            objWithEndTime.setDate(objWithEndDate.getDate());
+            try {
+                objAry[i]['start_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithStartTime));
+                objAry[i]['end_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithEndTime));
+            } catch {
+                objAry[i]['start_time'] = admin.firestore.Timestamp.fromDate(new Date());
+                objAry[i]['end_time'] = admin.firestore.Timestamp.fromDate(new Date());
+            }
+
+            
+            // Scrape description & add summary
+            const descriptionToken = '[class="l-main"]';
+            str = '';
+            $$(descriptionToken).each((idx, elem) => {
+                let str = $(elem).find('p').text();
+                str = str.trim();
+                objAry[i]['description'] = str;
+                objAry[i]['summary'] = str.slice(0, Math.min(str.length, 140));      // Follow twitter rules plz
+            });
+
+
+            // Set time updated
+            objAry[i]['time_updated'] = admin.firestore.Timestamp.fromDate(new Date());
+            // Set update note
+            objAry[i]['updates'] = "Re-scraped from the university website";
+            
         }).catch((e) => {
             console.log("ERROR SCRAPING FROM DETAIL PAGE: " + e);
         });
     }
-
-    // Scrape description & add summary
-    const descriptionToken = 'div.featured-list-item__content:has(h3.featured-list-item__title)';
-    $(descriptionToken).each((idx, elem) => {
-        let str = $(elem).find('p').text();
-        str = str.trim();
-        objAry[idx]['description'] = str;
-        objAry[idx]['summary'] = str.slice(0, Math.min(str.length, 140));      // Follow twitter rules plz
-    });
-
-    // Scrape time
-    const timeToken = 'div.featured-list-item__content:has(h3.featured-list-item__title)';
-    $(timeToken).each((idx, elem) => {
-        let str = $(elem).find('span.metadata--event').slice(0, 1).text();
-        str = str.trim();
-        const commaIdx = str.indexOf('‚');
-        const dashIdx = str.indexOf('–');
-        const dayMonth = str.slice(0, commaIdx);
-        const startTime = str.slice(commaIdx + 1, dashIdx);
-        const endTime = str.slice(dashIdx + 1);
-        const objWithDate = moment(dayMonth, ['MMM. D', 'MMM. DD']).toDate();
-        if (objWithDate.getMonth() !== 0 && pageNum === 0 && idx === 0) {
-            crossYear.firstEventIsJan = false;
-        }
-        if (objWithDate.getMonth() === 0 && crossYear.firstEventIsJan === false) {
-            crossYear.incrementNow = true;
-        }
-        const objWithStartTime = moment(startTime, ['hh:mm a', 'h:mm a']).toDate();
-        const objWithEndTime = moment(endTime, ['hh:mm a', 'h:mm a']).toDate();
-        objWithStartTime.setMonth(objWithDate.getMonth());
-        objWithEndTime.setMonth(objWithDate.getMonth());
-        objWithStartTime.setDate(objWithDate.getDay());
-        objWithEndTime.setDate(objWithDate.getDay());
-        if (crossYear.incrementNow) {
-            const year = objWithStartTime.getFullYear();
-            objWithStartTime.setFullYear(year + 1);
-            objWithEndTime.setFullYear(year + 1);
-        }
-
-        try {
-            objAry[idx]['start_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithStartTime));
-            objAry[idx]['end_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithEndTime));
-        } catch {
-            objAry[idx]['start_time'] = admin.firestore.Timestamp.fromDate(new Date());
-            objAry[idx]['end_time'] = admin.firestore.Timestamp.fromDate(new Date());
-        }
-        // Set time updated
-        objAry[idx]['time_updated'] = admin.firestore.Timestamp.fromDate(new Date());
-        // Set update note
-        objAry[idx]['updates'] = "Re-scraped from the university website";
-    });
 
     // Scrape img url and append tag for sporting events
     const imgToken = 'li.featured-list-item:has(h3.featured-list-item__title)';
@@ -221,7 +264,6 @@ async function collectEvents($, crossYear, pageNum) {
             }
         }
     });
-    console.log(idAry);
     return {
         documents: objAry,
         documentIds: idAry
