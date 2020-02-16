@@ -133,7 +133,7 @@ async function collectEvents($, pageNum) {
                             dateDashIdxs.push(i);
                         }
                     }
-                    if (dateDashIdxs.length == 1) {
+                    if (dateDashIdxs.length === 1) {
                         startDate = dateStr.slice(0, dateDashIdxs[0]).trim()
                         endDate = dateStr.slice(dateDashIdxs[0] + 1).trim()
                     } else {
@@ -154,16 +154,16 @@ async function collectEvents($, pageNum) {
             });
             const objWithStartDateMoment = moment(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
             if (!objWithStartDateMoment.isValid()) {
-                objAry[i]['start_date_uncertain'] == true;
+                objAry[i]['start_date_uncertain'] = true;
             } else {
-                objAry[i]['start_date_uncertain'] == false;
+                objAry[i]['start_date_uncertain'] = false;
             }
             const objWithStartDate = objWithStartDateMoment.toDate();
             const objWithEndDateMoment = moment(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
             if (!objWithEndDateMoment.isValid()) {
-                objAry[i]['end_date_uncertain'] == true;
+                objAry[i]['end_date_uncertain'] = true;
             } else {
-                objAry[i]['end_date_uncertain'] == false;
+                objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
             const objWithStartTimeMoment = moment(startTime, ['hh:mm a', 'h:mm a']);
