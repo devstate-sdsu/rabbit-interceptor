@@ -4,6 +4,8 @@ const URL = require("url-parse");
 const admin = require("firebase-admin");
 const moment = require("moment");
 
+let testing = true;
+const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
 
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),
@@ -11,6 +13,36 @@ admin.initializeApp({
   });
 
 let db = admin.firestore();
+
+async function getAllDocumentIds(ids) {
+    let eventsRef = db.collection(eventsCollectionName);
+    await eventsRef.get()
+        .then(snapshot => {
+            snapshot.forEach(doc => ids.add(doc.id))
+        })
+        .catch(err => {
+            console.log("Error getting all document ids");
+        })
+    return ids;
+}
+
+async function removeDeletedEvents(ids) {
+    const idsAry = Array.from(ids);
+    let batch = db.batch();
+    for (let i = 0; i < idsAry.length; i++) {
+        const id = idsAry[i];
+        batch.collection(eventsCollectionName).doc(id).delete();
+    }
+    await batch.commit().then(() => {
+        console.log("Successfully deleted all sdstate-deleted events from the database");
+        resolve();
+        return;
+    }).catch(() => {
+        console.log("Error deleting from the database events that are deleted by sdstate.edu");
+        reject();
+        return;
+    });
+}
 
 scrapeFromMainPage().then((res) => {
     for (let i = 0; i < res.documents.length; i++) {
@@ -24,7 +56,10 @@ scrapeFromMainPage().then((res) => {
     }
 });
 
+const allIds = Set();
+
 async function scrapeFromMainPage() {
+    await getAllDocumentIds(allIds);
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
     let masterObj = {};
     masterObj['documents'] = [];
@@ -34,6 +69,15 @@ async function scrapeFromMainPage() {
         console.log("Visiting page: ", pageToVisit);
         masterObj = await collectEventsPromise(pageToVisit, masterObj, i);
     }
+    for (let i = 0; i < masterObj.documentIds.length; i++) {
+        freshDocId = masterObj.documentIds[i];
+        if (freshDocId in allIds) {
+            if (!masterObj.documents[i].tags.includes("clubs")) {
+                allIds.remove(freshDocId);
+            }
+        }
+    }
+    await removeDeletedEvents(allIds);
     return masterObj;
 }
 
