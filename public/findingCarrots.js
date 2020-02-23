@@ -3,18 +3,25 @@ const cheerio = require("cheerio");
 const URL = require("url-parse");
 const admin = require("firebase-admin");
 const moment = require("moment");
+var { testing } = require('./config');
 
-let testing = true;
 const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
+const pagesToScrape = testing ? 3 : 10;
 
-admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    databaseURL: "https://rabbitbums.firebaseio.com/"
-  });
+
+if (testing) {
+    admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+        databaseURL: "https://rabbitbums.firebaseio.com/"
+    });
+} else {
+    admin.initializeApp();
+}
 
 let db = admin.firestore();
 
 async function getAllDocumentIds(ids) {
+    console.log("EVENTS COLLECTION NAME: " + eventsCollectionName);
     let eventsRef = db.collection(eventsCollectionName);
     await eventsRef.get()
         .then(snapshot => {
@@ -31,15 +38,14 @@ async function removeDeletedEvents(ids) {
     let batch = db.batch();
     for (let i = 0; i < idsAry.length; i++) {
         const id = idsAry[i];
-        batch.collection(eventsCollectionName).doc(id).delete();
+        var docRef = db.collection(eventsCollectionName).doc(id);
+        batch.delete(docRef);
     }
     await batch.commit().then(() => {
         console.log("Successfully deleted all sdstate-deleted events from the database");
-        resolve();
         return;
     }).catch(() => {
         console.log("Error deleting from the database events that are deleted by sdstate.edu");
-        reject();
         return;
     });
 }
@@ -48,7 +54,7 @@ scrapeFromMainPage().then((res) => {
     for (let i = 0; i < res.documents.length; i++) {
         event = res.documents[i];
         id = res.documentIds[i];
-        db.collection('eventsCol').doc(id).set(event).then(ref => {
+        db.collection(eventsCollectionName).doc(id).set(event).then(ref => {
             console.log('Added document with ID: ', ref.id);
         }).catch(e => {
             console.log("ERROR WITH FIRESTORE: " + e);
@@ -56,15 +62,14 @@ scrapeFromMainPage().then((res) => {
     }
 });
 
-const allIds = Set();
-
 async function scrapeFromMainPage() {
+    const allIds = new Set();
     await getAllDocumentIds(allIds);
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
     let masterObj = {};
     masterObj['documents'] = [];
     masterObj['documentIds'] = [];
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < pagesToScrape; i++) {
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
         masterObj = await collectEventsPromise(pageToVisit, masterObj, i);
