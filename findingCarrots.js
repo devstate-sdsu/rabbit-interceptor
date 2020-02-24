@@ -4,6 +4,7 @@ const URL = require("url-parse");
 const firebase = require("firebase");
 const moment = require("moment");
 var { testing } = require('./config');
+var schedule = require('node-schedule');
 const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
 const pagesToScrape = testing ? 3 : 20;
 
@@ -24,7 +25,7 @@ firebase.initializeApp(firebaseConfig);
 let db = firebase.firestore();
 
 // MAIN FUNCTION //
-var j = schedule.scheduleJob({minute: 40}, function() {
+var j = schedule.scheduleJob({minute: 42}, function() {
     scrapeFromMainPage()
         .then((res) => {
             let batch = db.batch();
