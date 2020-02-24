@@ -122,7 +122,7 @@ async function scrapeFromMainPage() {
         }
     }
 
-    // await deleteRemovedAndExpiredEvents(idsRemovedFromSite);
+    await deleteRemovedAndExpiredEvents(idsRemovedFromSite);
     return masterObj;
 }
 
