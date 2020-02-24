@@ -1,14 +1,27 @@
 const request = require("request-promise");
 const cheerio = require("cheerio");
 const URL = require("url-parse");
-const admin = require("firebase-admin");
+const firebase = require("firebase");
 const moment = require("moment");
 var { testing } = require('./config');
 const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
 const pagesToScrape = testing ? 3 : 10;
 
-admin.initializeApp();
-let db = admin.firestore();
+// Your web app's Firebase configuration
+var firebaseConfig = {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    databaseURL: process.env.FIREBASE_DATABASE_URL,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+let db = firebase.firestore();
 
 // MAIN FUNCTION //
 scrapeFromMainPage()
@@ -19,22 +32,19 @@ scrapeFromMainPage()
         id = res.documentIds[i];
         let docRef = db.collection(eventsCollectionName).doc(id);
         batch.set(docRef, event);
-        batch.commit().then(ref => {
-            console.log('Added document with ID: ', ref.id);
-            return "OH YES ADDING/UPDATING EVENTS WORKED";
-        }).catch(e => {
-            console.log("ERROR ADDING/UPDATING EVENTS WITH FIRESTORE: " + e);
-            return "OOPSIE";
-        });
     }
-    return;
+    batch.commit().then(() => {
+        console.log("OH YES ADDING/UPDATING EVENTS WORKED")
+        return;
+    }).catch(e => {
+        console.log("Error batch committing document adding/updating");
+    });
 }).catch((e) => {
     console.log("Error scraping from main page" + e);
     return "OOPSIE";
 });
 
 // MAIN FUNCTION END //
-
 
 
 async function getAllDocumentIds(ids) {
@@ -71,7 +81,7 @@ async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
     });
     batch = db.batch();
     await db.collection(eventsCollectionName)
-        .where('end_time', '<', admin.firestore.Timestamp.fromDate(new Date()))
+        .where('end_time', '<', firebase.firestore.Timestamp.fromDate(new Date()))
         .get()
         .then((snapshot) => {
             snapshot.forEach(doc => {
@@ -112,7 +122,7 @@ async function scrapeFromMainPage() {
         }
     }
 
-    await deleteRemovedAndExpiredEvents(idsRemovedFromSite);
+    // await deleteRemovedAndExpiredEvents(idsRemovedFromSite);
     return masterObj;
 }
 
@@ -271,11 +281,11 @@ async function collectEvents($, pageNum) {
             objWithEndTime.setMonth(objWithEndDate.getMonth());
             objWithEndTime.setDate(objWithEndDate.getDate());
             try {
-                objAry[i]['start_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithStartTime));
-                objAry[i]['end_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithEndTime));
+                objAry[i]['start_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithStartTime));
+                objAry[i]['end_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithEndTime));
             } catch(e) {
-                objAry[i]['start_time'] = admin.firestore.Timestamp.fromDate(new Date());
-                objAry[i]['end_time'] = admin.firestore.Timestamp.fromDate(new Date());
+                objAry[i]['start_time'] = firebase.firestore.Timestamp.fromDate(new Date());
+                objAry[i]['end_time'] = firebase.firestore.Timestamp.fromDate(new Date());
             }
 
             
@@ -295,7 +305,7 @@ async function collectEvents($, pageNum) {
 
 
             // Set time updated
-            objAry[i]['time_updated'] = admin.firestore.Timestamp.fromDate(new Date());
+            objAry[i]['time_updated'] = firebase.firestore.Timestamp.fromDate(new Date());
             // Set update note
             objAry[i]['updates'] = "Re-scraped from the university website";
             

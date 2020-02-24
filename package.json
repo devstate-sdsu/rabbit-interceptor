@@ -19,7 +19,7 @@
   "homepage": "https://github.com/devstate-sdsu/rabbit-interceptor#readme",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
-    "firebase-admin": "^8.8.0",
+    "firebase": "^7.9.1",
     "moment": "^2.24.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.5",
