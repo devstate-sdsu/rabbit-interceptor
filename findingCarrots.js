@@ -34,7 +34,8 @@ http.createServer(
             .listen(process.env.PORT || 5000);
 var twelve = new Date().setHours(1);
 var UTChour = new Date(twelve).getUTCHours();
-console.log("UTC Hour: " + UTCHour);
+console.log("UTC Hour: " );
+console.log(UTChour);
 var j = schedule.scheduleJob({hour: UTChour, minute: 00}, function() {
     scrapeFromMainPage()
         .then((res) => {
