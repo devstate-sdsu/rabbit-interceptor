@@ -26,9 +26,13 @@ firebase.initializeApp(firebaseConfig);
 let db = firebase.firestore();
 
 /* MAIN FUNCTION */
-// The following line is to prevent
-http.createServer(onRequest).listen(process.env.PORT || 6000);
-var j = schedule.scheduleJob({minute: 06}, function() {
+// The following line is to prevent heroku from crashing for not listening to port
+http.createServer(
+    function (req, res) { 
+        res.writeHead(200, {'Content-Type': 'text/plain'}); 
+        res.send('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate\n'); })
+            .listen(process.env.PORT || 5000);
+var j = schedule.scheduleJob({minute: 15}, function() {
     scrapeFromMainPage()
         .then((res) => {
             let batch = db.batch();
