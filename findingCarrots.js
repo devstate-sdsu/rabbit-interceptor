@@ -32,8 +32,9 @@ http.createServer(
         res.writeHead(200, {'Content-Type': 'text/plain'}); 
         res.send('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate\n'); })
             .listen(process.env.PORT || 5000);
-var twelve = new Date().setHours(1);
-var UTChour = new Date(twelve).getUTCHours();
+var twelve = moment.tz("2020-02-02 02:00", "America/North_Dakota/Center");
+var twelveUTC = twelve.utc();
+var UTChour = twelveUTC.hours();
 console.log("UTC Hour: " );
 console.log(UTChour);
 var j = schedule.scheduleJob({hour: UTChour, minute: 00}, function() {
