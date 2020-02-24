@@ -5,6 +5,7 @@ const firebase = require("firebase");
 const moment = require("moment");
 var { testing } = require('./config');
 var schedule = require('node-schedule');
+var http = require('http');
 const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
 const pagesToScrape = testing ? 3 : 20;
 
@@ -27,7 +28,7 @@ let db = firebase.firestore();
 /* MAIN FUNCTION */
 // The following line is to prevent
 http.createServer(onRequest).listen(process.env.PORT || 6000);
-var j = schedule.scheduleJob({minute: 55}, function() {
+var j = schedule.scheduleJob({minute: 06}, function() {
     scrapeFromMainPage()
         .then((res) => {
             let batch = db.batch();
