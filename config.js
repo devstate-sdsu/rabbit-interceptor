@@ -1,1 +1,1 @@
-module.exports = {testing: true};
+module.exports = {testing: false};

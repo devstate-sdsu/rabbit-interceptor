@@ -24,27 +24,30 @@ firebase.initializeApp(firebaseConfig);
 let db = firebase.firestore();
 
 // MAIN FUNCTION //
-scrapeFromMainPage()
-.then((res) => {
-    let batch = db.batch();
-    for (let i = 0; i < res.documents.length; i++) {
-        event = res.documents[i];
-        id = res.documentIds[i];
-        let docRef = db.collection(eventsCollectionName).doc(id);
-        batch.set(docRef, event);
-    }
-    batch.commit().then(() => {
-        console.log("OH YES ADDING/UPDATING EVENTS WORKED")
-        return;
-    }).catch(e => {
-        console.log("Error batch committing document adding/updating");
-    });
-}).catch((e) => {
-    console.log("Error scraping from main page" + e);
-    return "OOPSIE";
+var j = schedule.scheduleJob({minute: 40}, function() {
+    scrapeFromMainPage()
+        .then((res) => {
+            let batch = db.batch();
+            for (let i = 0; i < res.documents.length; i++) {
+                event = res.documents[i];
+                id = res.documentIds[i];
+                let docRef = db.collection(eventsCollectionName).doc(id);
+                batch.set(docRef, event);
+            }
+            batch.commit().then(() => {
+                console.log("OH YES ADDING/UPDATING EVENTS WORKED")
+                return;
+            }).catch(e => {
+                console.log("Error batch committing document adding/updating");
+            });
+        }).catch((e) => {
+            console.log("Error scraping from main page" + e);
+            return "OOPSIE";
+        });
 });
+// MAIN FUNCTION ENDS //
 
-// MAIN FUNCTION END //
+
 
 
 async function getAllDocumentIds(ids) {
