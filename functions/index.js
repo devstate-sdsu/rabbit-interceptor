@@ -4,37 +4,35 @@ const URL = require("url-parse");
 const admin = require("firebase-admin");
 const moment = require("moment");
 var { testing } = require('./config');
+const functions = require('firebase-functions');
+
 
 const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
 const pagesToScrape = testing ? 3 : 10;
 
-
-if (testing) {
-    admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        databaseURL: "https://rabbitbums.firebaseio.com/"
-    });
-} else {
-    admin.initializeApp();
-}
+admin.initializeApp();
 
 let db = admin.firestore();
 
 async function getAllDocumentIds(ids) {
-    console.log("EVENTS COLLECTION NAME: " + eventsCollectionName);
     let eventsRef = db.collection(eventsCollectionName);
     await eventsRef.get()
         .then(snapshot => {
-            snapshot.forEach(doc => ids.add(doc.id))
+            snapshot.forEach(doc => {
+                if (!doc.data().tags.includes("clubs")) {
+                    ids.add(doc.id);
+                }
+            });
+            return ids;
         })
         .catch(err => {
-            console.log("Error getting all document ids");
+            console.log("Error getting all document ids: " + err);
+            return ids;
         })
-    return ids;
 }
 
-async function removeDeletedEvents(ids) {
-    const idsAry = Array.from(ids);
+async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
+    const idsAry = Array.from(idsRemovedFromSite);
     let batch = db.batch();
     for (let i = 0; i < idsAry.length; i++) {
         const id = idsAry[i];
@@ -48,41 +46,76 @@ async function removeDeletedEvents(ids) {
         console.log("Error deleting from the database events that are deleted by sdstate.edu");
         return;
     });
+    batch = db.batch();
+    await db.collection(eventsCollectionName)
+        .where('end_time', '<', admin.firestore.Timestamp.fromDate(new Date()))
+        .get()
+        .then((snapshot) => {
+            snapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            return;
+        }).catch((e) => {
+            console.log("Error getting expired events");
+        });
+    await batch.commit().then(() => {
+        console.log("Successfully deleted all expired events from the database");
+        return;
+    }).catch(() => {
+        console.log("Error deleting expired events from the database");
+        return;
+    });    
+    return;
 }
 
-scrapeFromMainPage().then((res) => {
-    for (let i = 0; i < res.documents.length; i++) {
-        event = res.documents[i];
-        id = res.documentIds[i];
-        db.collection(eventsCollectionName).doc(id).set(event).then(ref => {
-            console.log('Added document with ID: ', ref.id);
-        }).catch(e => {
-            console.log("ERROR WITH FIRESTORE: " + e);
+exports.interceptCarrots = functions.https.onRequest((request, response) => {
+    scrapeFromMainPage()
+        .then((res) => {
+            let batch = db.batch();
+            for (let i = 0; i < res.documents.length; i++) {
+                event = res.documents[i];
+                id = res.documentIds[i];
+                let docRef = db.collection(eventsCollectionName).doc(id);
+                batch.set(docRef, event);
+                batch.commit().then(ref => {
+                    console.log('Added document with ID: ', ref.id);
+                    return "OH YES ADDING/UPDATING EVENTS WORKED";
+                }).catch(e => {
+                    console.log("ERROR ADDING/UPDATING EVENTS WITH FIRESTORE: " + e);
+                    return "OOPSIE";
+                });
+            }
+            return;
+        }).catch((e) => {
+            console.log("Error scraping from main page" + e);
+            return "OOPSIE";
         });
-    }
+    response.send("success");
+    return;
 });
 
 async function scrapeFromMainPage() {
-    const allIds = new Set();
-    await getAllDocumentIds(allIds);
+    const idsRemovedFromSite = new Set();
+    await getAllDocumentIds(idsRemovedFromSite);
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
     let masterObj = {};
     masterObj['documents'] = [];
     masterObj['documentIds'] = [];
     for (let i = 0; i < pagesToScrape; i++) {
+        /* eslint-disable no-await-in-loop */
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
         masterObj = await collectEventsPromise(pageToVisit, masterObj, i);
     }
+    const allIdxs = [];
     for (let i = 0; i < masterObj.documentIds.length; i++) {
         freshDocId = masterObj.documentIds[i];
-        if (freshDocId in allIds) {
-            if (!masterObj.documents[i].tags.includes("clubs")) {
-                allIds.remove(freshDocId);
-            }
+        if (idsRemovedFromSite.has(freshDocId)) {
+            idsRemovedFromSite.delete(freshDocId);
         }
     }
-    await removeDeletedEvents(allIds);
+
+    await deleteRemovedAndExpiredEvents(idsRemovedFromSite);
     return masterObj;
 }
 
@@ -105,7 +138,12 @@ async function collectEventsPromise(pageToVisit, masterObj, i) {
                         documentIds: masterIdAry.concat(result.documentIds)
                     });
                 }
+                return;
+            }).catch(() => {
+                console.log("Failed to visit a particular page: " + pageToVisit);
+                return;
             });
+            return;
         }).catch(e => {
             console.log("ERROR COLLECTING EVENTS: " + e);
         });
@@ -147,7 +185,7 @@ async function collectEvents($, pageNum) {
                 const locationCommaIdx = str.indexOf(',');
                 let bigLocation = '';
                 let tinyLocation = '';
-                if (locationCommaIdx != -1) {
+                if (locationCommaIdx !== -1) {
                     bigLocation = str.slice(0, locationCommaIdx);
                     tinyLocation = str.slice(locationCommaIdx + 1);
                 } else {
@@ -173,7 +211,7 @@ async function collectEvents($, pageNum) {
             var endTime = '';
             const dateTimeToken = 'span.event__detail';
             $$(dateTimeToken).each((idx, elem) => {
-                if (idx == 0) {            
+                if (idx === 0) {            
                     var dateDashIdxs = [];
                     var dateStr = $(elem).text();
                     dateStr = dateStr.trim();
@@ -190,7 +228,7 @@ async function collectEvents($, pageNum) {
                         endDate = dateStr;
                     }
                 }
-                if (idx == 1) {
+                if (idx === 1) {
                     var dashIdx = -1;
                     var timeStr = $(elem).text();
                     timeStr = timeStr.trim();
@@ -238,7 +276,7 @@ async function collectEvents($, pageNum) {
             try {
                 objAry[i]['start_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithStartTime));
                 objAry[i]['end_time'] = admin.firestore.Timestamp.fromDate(new Date(objWithEndTime));
-            } catch {
+            } catch(e) {
                 objAry[i]['start_time'] = admin.firestore.Timestamp.fromDate(new Date());
                 objAry[i]['end_time'] = admin.firestore.Timestamp.fromDate(new Date());
             }
@@ -264,6 +302,8 @@ async function collectEvents($, pageNum) {
             // Set update note
             objAry[i]['updates'] = "Re-scraped from the university website";
             
+
+            return;
         }).catch((e) => {
             console.log("ERROR SCRAPING FROM DETAIL PAGE: " + e);
         });
