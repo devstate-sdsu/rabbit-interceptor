@@ -24,8 +24,10 @@ firebase.initializeApp(firebaseConfig);
 
 let db = firebase.firestore();
 
-// MAIN FUNCTION //
-var j = schedule.scheduleJob({minute: 42}, function() {
+/* MAIN FUNCTION */
+// The following line is to prevent
+http.createServer(onRequest).listen(process.env.PORT || 6000);
+var j = schedule.scheduleJob({minute: 55}, function() {
     scrapeFromMainPage()
         .then((res) => {
             let batch = db.batch();
@@ -46,7 +48,7 @@ var j = schedule.scheduleJob({minute: 42}, function() {
             return "OOPSIE";
         });
 });
-// MAIN FUNCTION ENDS //
+/* MAIN FUNCTION ENDS */
 
 
 
