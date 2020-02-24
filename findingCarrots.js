@@ -37,7 +37,7 @@ var twelveUTC = twelve.utc();
 var UTChour = twelveUTC.hours();
 console.log("UTC Hour: " );
 console.log(UTChour);
-var j = schedule.scheduleJob({hour: UTChour, minute: 00}, function() {
+var j = schedule.scheduleJob({hour: UTChour, minute: 06}, function() {
     scrapeFromMainPage()
         .then((res) => {
             let batch = db.batch();
