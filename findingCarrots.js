@@ -5,7 +5,7 @@ const firebase = require("firebase");
 const moment = require("moment");
 var { testing } = require('./config');
 const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
-const pagesToScrape = testing ? 3 : 10;
+const pagesToScrape = testing ? 3 : 20;
 
 // Your web app's Firebase configuration
 var firebaseConfig = {
