@@ -32,7 +32,7 @@ http.createServer(
         res.writeHead(200, {'Content-Type': 'text/plain'}); 
         res.send('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate\n'); })
             .listen(process.env.PORT || 5000);
-var j = schedule.scheduleJob({minute: 15}, function() {
+var j = schedule.scheduleJob({minute: 45}, function() {
     scrapeFromMainPage()
         .then((res) => {
             let batch = db.batch();
