@@ -172,7 +172,6 @@ async function collectEventsPromise(pageToVisit, masterObj, i) {
     });
 }
 
-offsetToday = momentTz.tz(momentTz(), "America/North_Dakota/Center").utcOffset();
 
 async function collectEvents($, pageNum) {
     const objAry = [];
@@ -264,7 +263,7 @@ async function collectEvents($, pageNum) {
                 }
             });
 
-            const objWithStartDateMoment = momentTz.utc(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
+            const objWithStartDateMoment = momentTz.tz(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START DATE MOMENT: ");
                 console.log(objWithStartDateMoment);
@@ -275,14 +274,14 @@ async function collectEvents($, pageNum) {
                 objAry[i]['start_date_uncertain'] = false;
             }
             const objWithStartDate = objWithStartDateMoment.toDate();
-            const objWithEndDateMoment = momentTz.utc(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
+            const objWithEndDateMoment = momentTz.tz(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
             if (!objWithEndDateMoment.isValid()) {
                 objAry[i]['end_date_uncertain'] = true;
             } else {
                 objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
-            const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']);
+            const objWithStartTimeMoment = momentTz.tz(startTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START TIME MOMENT: ");
                 console.log(objWithStartTimeMoment);
@@ -297,7 +296,7 @@ async function collectEvents($, pageNum) {
                 console.log("DATE OBJ WITH START TIME: ");
                 console.log(objWithStartTime);
             }
-            const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']);
+            const objWithEndTimeMoment = momentTz.tz(endTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
             if (!objWithEndTimeMoment.isValid()) {
                 objAry[i]['end_time_uncertain'] = true;
             } else {
@@ -307,11 +306,9 @@ async function collectEvents($, pageNum) {
             objWithStartTime.setFullYear(objWithStartDate.getFullYear());
             objWithStartTime.setMonth(objWithStartDate.getMonth());
             objWithStartTime.setDate(objWithStartDate.getDate());
-            objWithStartTime = momentTz.tz(objWithStartTime, "America/North_Dakota/Center").toDate();
             objWithEndTime.setFullYear(objWithEndDate.getFullYear());
             objWithEndTime.setMonth(objWithEndDate.getMonth());
             objWithEndTime.setDate(objWithEndDate.getDate());
-            objWithEndTime = momentTz.tz(objWithEndTime, "America/North_Dakota/Center").toDate();
             try {
                 objAry[i]['start_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithStartTime));
                 objAry[i]['end_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithEndTime));
