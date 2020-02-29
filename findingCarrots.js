@@ -90,7 +90,7 @@ async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
     });
     batch = db.batch();
     await db.collection(eventsCollectionName)
-        .where('end_time', '<', firebase.firestore.Timestamp.fromDate(momentTz.utc(momentTz().format("HH:mm"), "HH:mm").toDate())
+        .where('end_time', '<', firebase.firestore.Timestamp.fromDate(momentTz.utc(momentTz().format("HH:mm"), "HH:mm").toDate()))
         .get()
         .then((snapshot) => {
             snapshot.forEach(doc => {
@@ -99,7 +99,7 @@ async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
             return;
         }).catch((e) => {
             console.log("Error getting expired events");
-        }));
+        });
     await batch.commit().then(() => {
         console.log("Successfully deleted all expired events from the database");
         return;
