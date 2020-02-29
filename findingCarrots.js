@@ -35,7 +35,7 @@ http.createServer(
 var twelve = moment.tz("2020-02-02 00:00", "America/North_Dakota/Center");
 var twelveUTC = twelve.utc();
 var UTChour = twelveUTC.hours();
-var j = schedule.scheduleJob({hour: UTChour, minute: 00}, function() {
+var j = schedule.scheduleJob({hour: UTChour, minute: 50}, function() {
     scrapeFromMainPage()
         .then((res) => {
             let batch = db.batch();
