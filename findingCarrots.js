@@ -282,7 +282,7 @@ async function collectEvents($, pageNum) {
                 objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
-            const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']).utcOffset(offsetToday);
+            const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']).utcOffset(-offsetToday);
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START TIME MOMENT: ");
                 console.log(objWithStartTimeMoment);
@@ -297,7 +297,7 @@ async function collectEvents($, pageNum) {
                 console.log("DATE OBJ WITH START TIME: ");
                 console.log(objWithStartTime);
             }
-            const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']).utcOffset(offsetToday);
+            const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']).utcOffset(-offsetToday);
             if (!objWithEndTimeMoment.isValid()) {
                 objAry[i]['end_time_uncertain'] = true;
             } else {
