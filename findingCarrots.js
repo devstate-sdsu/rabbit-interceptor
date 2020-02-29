@@ -250,6 +250,9 @@ async function collectEvents($, pageNum) {
                     var timeStr = $(elem).text();
                     timeStr = timeStr.trim();
                     dashIdx = timeStr.indexOf('–');
+                    if (dashIdx == -1) {
+                        dashIdx = timeStr.indexOf('-');
+                    }
                     startTime = timeStr.slice(0, dashIdx);
                     startTime = timeStr.trim();
                     endTime = timeStr.slice(dashIdx + 1);
@@ -282,12 +285,8 @@ async function collectEvents($, pageNum) {
             if (startTime === 'All' && endTime === 'Day') {
                 objAry[i]['start_time_uncertain'] = false;
                 objAry[i]['end_time_uncertain'] = false;
-                objWithStartTime.setSeconds(0);
-                objWithStartTime.setMinutes(0);
-                objWithStartTime.setHours(0);
-                objWithEndTime.setSeconds(59);
-                objWithEndTime.setMinutes(59);
-                objWithEndTime.setHours(23);
+                objWithStartTime.setHours(0, 0, 0, 0);
+                objWithEndTime.setHours(23, 59, 0, 0);
             } else {
                 const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']);
                 if (!objWithStartTimeMoment.isValid()) {
