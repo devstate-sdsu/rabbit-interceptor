@@ -263,7 +263,6 @@ async function collectEvents($, pageNum) {
                 }
             });
 
-            if (start)
             const objWithStartDateMoment = momentTz.tz(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START DATE MOMENT: ");
