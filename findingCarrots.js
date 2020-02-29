@@ -292,7 +292,7 @@ async function collectEvents($, pageNum) {
             } else {
                 objAry[i]['start_time_uncertain'] = false;
             }            
-            const objWithStartTime = objWithStartTimeMoment.toDate();
+            var objWithStartTime = objWithStartTimeMoment.toDate();
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("DATE OBJ WITH START TIME: ");
                 console.log(objWithStartTime);
@@ -303,7 +303,7 @@ async function collectEvents($, pageNum) {
             } else {
                 objAry[i]['end_time_uncertain'] = false;
             }
-            const objWithEndTime = objWithEndTimeMoment.toDate();
+            var objWithEndTime = objWithEndTimeMoment.toDate();
             objWithStartTime.setFullYear(objWithStartDate.getFullYear());
             objWithStartTime.setMonth(objWithStartDate.getMonth());
             objWithStartTime.setDate(objWithStartDate.getDate());
