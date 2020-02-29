@@ -307,11 +307,11 @@ async function collectEvents($, pageNum) {
             objWithStartTime.setFullYear(objWithStartDate.getFullYear());
             objWithStartTime.setMonth(objWithStartDate.getMonth());
             objWithStartTime.setDate(objWithStartDate.getDate());
-            objWithStartTime = momentTz.utc(objWithStartTime).add({minutes: -offsetToday}).toDate();
+            objWithStartTime = momentTz.tz(objWithStartTime, "America/North_Dakota/Center").toDate();
             objWithEndTime.setFullYear(objWithEndDate.getFullYear());
             objWithEndTime.setMonth(objWithEndDate.getMonth());
             objWithEndTime.setDate(objWithEndDate.getDate());
-            objWithEndTime = momentTz.utc(objWithEndTime).add({minutes: -offsetToday}).toDate();
+            objWithEndTime = momentTz.tz(objWithEndTime, "America/North_Dakota/Center").toDate();
             try {
                 objAry[i]['start_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithStartTime));
                 objAry[i]['end_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithEndTime));
