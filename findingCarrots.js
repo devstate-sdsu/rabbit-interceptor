@@ -324,7 +324,7 @@ async function collectEvents($, pageNum) {
             objAry[i]['updates'] = "Re-scraped from the university website";
             
 
-            return;
+            return; 
         }).catch((e) => {
             console.log("ERROR SCRAPING FROM DETAIL PAGE: " + e);
         });
@@ -337,7 +337,8 @@ async function collectEvents($, pageNum) {
         if (str) {
             str = str.trim();
             // Having the following url means that it is a sporting event.
-            if (str.startsWith('/sites/default/files/styles/teaser_image_/public/2019-09/jacks%20Logo_0.jpg' ||
+            if (str.startsWith('/sites/default/files/styles/teaser_image_/public/2018-12/Logo_37.jpg') || 
+                str.startsWith('/sites/default/files/styles/teaser_image_/public/2019-09/jacks%20Logo_0.jpg' ||
                 str.startsWith('/sites/default/files/styles/teaser_image_/public/2018-11/Logo_2.jpg'))) {
                 if (objAry[idx]['big_location'].includes('Frost Arena')) {
                     objAry[idx]['image'] = 'https://gojacks.com/images/2016/6/16/20090123tpc_003.jpg?width=500&height=300&mode=crop';
