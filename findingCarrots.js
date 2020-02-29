@@ -2,7 +2,7 @@ const request = require("request-promise");
 const cheerio = require("cheerio");
 const URL = require("url-parse");
 const firebase = require("firebase");
-const moment = require("moment");
+const momentTz = require("moment-timezone");
 var { testing } = require('./config');
 var schedule = require('node-schedule');
 var http = require('http');
@@ -172,6 +172,7 @@ async function collectEventsPromise(pageToVisit, masterObj, i) {
     });
 }
 
+
 async function collectEvents($, pageNum) {
     const objAry = [];
     const idAry = [];
@@ -192,10 +193,6 @@ async function collectEvents($, pageNum) {
         idAry.push('');
     });
 
-
-    offsetToday = moment(moment.tz(moment(), "America/North_Dakota/Center")).utcOffset();
-    print("THIS IS THE OFFSET! ");
-    print(offsetToday);
     // Go into details page
     for (let i = 0; i < detailUrlAry.length; i++) {
         const url = detailUrlAry[i];
@@ -266,7 +263,8 @@ async function collectEvents($, pageNum) {
                 }
             });
 
-            const objWithStartDateMoment = moment(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']).utcOffset(offsetToday);
+            if (start)
+            const objWithStartDateMoment = momentTz.tz(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START DATE MOMENT: ");
                 console.log(objWithStartDateMoment);
@@ -277,14 +275,14 @@ async function collectEvents($, pageNum) {
                 objAry[i]['start_date_uncertain'] = false;
             }
             const objWithStartDate = objWithStartDateMoment.toDate();
-            const objWithEndDateMoment = moment(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']).utcOffset(offsetToday);
+            const objWithEndDateMoment = momentTz.tz(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
             if (!objWithEndDateMoment.isValid()) {
                 objAry[i]['end_date_uncertain'] = true;
             } else {
                 objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
-            const objWithStartTimeMoment = moment(startTime, ['hh:mm a', 'h:mm a']).utcOffset(offsetToday);
+            const objWithStartTimeMoment = momentTz.tz(startTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START TIME MOMENT: ");
                 console.log(objWithStartTimeMoment);
@@ -299,7 +297,7 @@ async function collectEvents($, pageNum) {
                 console.log("DATE OBJ WITH START TIME: ");
                 console.log(objWithStartTime);
             }
-            const objWithEndTimeMoment = moment(endTime, ['hh:mm a', 'h:mm a']).utcOffset(offsetToday);
+            const objWithEndTimeMoment = momentTz.tz(endTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
             if (!objWithEndTimeMoment.isValid()) {
                 objAry[i]['end_time_uncertain'] = true;
             } else {
