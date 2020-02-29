@@ -282,7 +282,7 @@ async function collectEvents($, pageNum) {
                 objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
-            const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']).utcOffset(-offsetToday);
+            const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']);
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START TIME MOMENT: ");
                 console.log(objWithStartTimeMoment);
@@ -291,13 +291,13 @@ async function collectEvents($, pageNum) {
                 objAry[i]['start_time_uncertain'] = true;
             } else {
                 objAry[i]['start_time_uncertain'] = false;
-            }
+            }            
             const objWithStartTime = objWithStartTimeMoment.toDate();
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("DATE OBJ WITH START TIME: ");
                 console.log(objWithStartTime);
             }
-            const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']).utcOffset(-offsetToday);
+            const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']);
             if (!objWithEndTimeMoment.isValid()) {
                 objAry[i]['end_time_uncertain'] = true;
             } else {
@@ -307,9 +307,11 @@ async function collectEvents($, pageNum) {
             objWithStartTime.setFullYear(objWithStartDate.getFullYear());
             objWithStartTime.setMonth(objWithStartDate.getMonth());
             objWithStartTime.setDate(objWithStartDate.getDate());
+            objWithStartTime = momentTz.utc(objWithStartTime).add({minutes: -offsetToday}).toDate();
             objWithEndTime.setFullYear(objWithEndDate.getFullYear());
             objWithEndTime.setMonth(objWithEndDate.getMonth());
             objWithEndTime.setDate(objWithEndDate.getDate());
+            objWithEndTime = momentTz.utc(objWithEndTime).add({minutes: -offsetToday}).toDate();
             try {
                 objAry[i]['start_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithStartTime));
                 objAry[i]['end_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithEndTime));
