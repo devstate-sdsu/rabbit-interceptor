@@ -193,7 +193,7 @@ async function collectEvents($, pageNum) {
     });
 
 
-    offsetToday = moment.tz(moment(), "America/North_Dakota/Center").utcOffset();
+    offsetToday = moment(moment.tz(moment(), "America/North_Dakota/Center")).utcOffset();
     print("THIS IS THE OFFSET! ");
     print(offsetToday);
     // Go into details page
