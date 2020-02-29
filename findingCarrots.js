@@ -193,7 +193,7 @@ async function collectEvents($, pageNum) {
     });
 
 
-    offsetToday = moment.tz().utcOffset();
+    offsetToday = moment.tz(moment(), "America/North_Dakota/Center").utcOffset();
     // Go into details page
     for (let i = 0; i < detailUrlAry.length; i++) {
         const url = detailUrlAry[i];
