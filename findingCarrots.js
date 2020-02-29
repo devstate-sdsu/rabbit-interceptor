@@ -254,6 +254,9 @@ async function collectEvents($, pageNum) {
                     var timeStr = $(elem).text();
                     timeStr = timeStr.trim();
                     dashIdx = timeStr.indexOf('–');
+                    if (dashIdx === -1) {
+                        dashIdx = timeStr.indexOf('–');
+                    }
                     startTime = timeStr.slice(0, dashIdx);
                     startTime = timeStr.trim();
                     endTime = timeStr.slice(dashIdx + 1);
