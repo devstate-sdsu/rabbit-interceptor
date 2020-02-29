@@ -263,7 +263,7 @@ async function collectEvents($, pageNum) {
                 }
             });
 
-            const objWithStartDateMoment = momentTz.tz(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
+            const objWithStartDateMoment = momentTz.utc(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START DATE MOMENT: ");
                 console.log(objWithStartDateMoment);
@@ -274,14 +274,14 @@ async function collectEvents($, pageNum) {
                 objAry[i]['start_date_uncertain'] = false;
             }
             const objWithStartDate = objWithStartDateMoment.toDate();
-            const objWithEndDateMoment = momentTz.tz(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
+            const objWithEndDateMoment = momentTz.utc(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
             if (!objWithEndDateMoment.isValid()) {
                 objAry[i]['end_date_uncertain'] = true;
             } else {
                 objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
-            const objWithStartTimeMoment = momentTz.tz(startTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
+            const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']);
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START TIME MOMENT: ");
                 console.log(objWithStartTimeMoment);
@@ -296,7 +296,7 @@ async function collectEvents($, pageNum) {
                 console.log("DATE OBJ WITH START TIME: ");
                 console.log(objWithStartTime);
             }
-            const objWithEndTimeMoment = momentTz.tz(endTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
+            const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']);
             if (!objWithEndTimeMoment.isValid()) {
                 objAry[i]['end_time_uncertain'] = true;
             } else {
