@@ -99,7 +99,7 @@ async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
             return;
         }).catch((e) => {
             console.log("Error getting expired events");
-        });
+        }));
     await batch.commit().then(() => {
         console.log("Successfully deleted all expired events from the database");
         return;
