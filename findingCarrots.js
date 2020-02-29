@@ -192,6 +192,8 @@ async function collectEvents($, pageNum) {
         idAry.push('');
     });
 
+
+    offsetToday = moment.tz().utcOffset();
     // Go into details page
     for (let i = 0; i < detailUrlAry.length; i++) {
         const url = detailUrlAry[i];
@@ -261,7 +263,8 @@ async function collectEvents($, pageNum) {
                     endTime = endTime.trim();
                 }
             });
-            const objWithStartDateMoment = moment.tz(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
+
+            const objWithStartDateMoment = moment(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']).utcOffset(offsetToday);
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START DATE MOMENT: ");
                 console.log(objWithStartDateMoment);
@@ -272,14 +275,14 @@ async function collectEvents($, pageNum) {
                 objAry[i]['start_date_uncertain'] = false;
             }
             const objWithStartDate = objWithStartDateMoment.toDate();
-            const objWithEndDateMoment = moment.tz(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY'], "America/North_Dakota/Center");
+            const objWithEndDateMoment = moment(endDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']).utcOffset(offsetToday);
             if (!objWithEndDateMoment.isValid()) {
                 objAry[i]['end_date_uncertain'] = true;
             } else {
                 objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
-            const objWithStartTimeMoment = moment.tz(startTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
+            const objWithStartTimeMoment = moment(startTime, ['hh:mm a', 'h:mm a']).utcOffset(offsetToday);
             if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
                 console.log("START TIME MOMENT: ");
                 console.log(objWithStartTimeMoment);
@@ -294,7 +297,7 @@ async function collectEvents($, pageNum) {
                 console.log("DATE OBJ WITH START TIME: ");
                 console.log(objWithStartTime);
             }
-            const objWithEndTimeMoment = moment.tz(endTime, ['hh:mm a', 'h:mm a'], "America/North_Dakota/Center");
+            const objWithEndTimeMoment = moment(endTime, ['hh:mm a', 'h:mm a']).utcOffset(offsetToday);
             if (!objWithEndTimeMoment.isValid()) {
                 objAry[i]['end_time_uncertain'] = true;
             } else {
