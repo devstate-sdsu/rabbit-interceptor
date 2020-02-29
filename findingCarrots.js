@@ -32,11 +32,6 @@ http.createServer(
         res.writeHead(200, {'Content-Type': 'text/plain'}); 
         res.end('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate'); })
             .listen(process.env.PORT || 5000);
-// Not using node-schedule anymore because using heroku schedule
-// var twelve = moment.tz("2020-02-02 00:00", "America/North_Dakota/Center");
-// var twelveUTC = twelve.utc();
-// var UTChour = twelveUTC.hours();
-// var j = schedule.scheduleJob({hour: UTChour, minute: 50}, function() {
 scrapeFromMainPage()
     .then((res) => {
         let batch = db.batch();
@@ -56,7 +51,6 @@ scrapeFromMainPage()
         console.log("Error scraping from main page" + e);
         return "OOPSIE";
     });
-// });
 /* MAIN FUNCTION ENDS */
 
 
@@ -96,7 +90,7 @@ async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
     });
     batch = db.batch();
     await db.collection(eventsCollectionName)
-        .where('end_time', '<', firebase.firestore.Timestamp.fromDate(new Date()))
+        .where('end_time', '<', firebase.firestore.Timestamp.fromDate(momentTz.utc(momentTz().format("HH:mm"), "HH:mm").toDate())
         .get()
         .then((snapshot) => {
             snapshot.forEach(doc => {
@@ -263,11 +257,11 @@ async function collectEvents($, pageNum) {
                 }
             });
 
+
+            // We are using UTC throughout this scraper because if we use exact, accurate-to-our-timezone time, 
+            // some recurring events that happen at the same time every week will appear to happen at different
+            // times this week than next week if this weekend is the beginning/end of Daylight Savings Time. 
             const objWithStartDateMoment = momentTz.utc(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
-            if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
-                console.log("START DATE MOMENT: ");
-                console.log(objWithStartDateMoment);
-            }
             if (!objWithStartDateMoment.isValid()) {
                 objAry[i]['start_date_uncertain'] = true;
             } else {
@@ -281,34 +275,42 @@ async function collectEvents($, pageNum) {
                 objAry[i]['end_date_uncertain'] = false;
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
-            const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']);
-            if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
-                console.log("START TIME MOMENT: ");
-                console.log(objWithStartTimeMoment);
-            }
-            if (!objWithStartTimeMoment.isValid()) {
-                objAry[i]['start_time_uncertain'] = true;
-            } else {
+
+
+            var objWithStartTime = new Date();
+            var objWithEndTime = new Date();
+            if (startTime === 'All' && endTime === 'Day') {
                 objAry[i]['start_time_uncertain'] = false;
-            }            
-            var objWithStartTime = objWithStartTimeMoment.toDate();
-            if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
-                console.log("DATE OBJ WITH START TIME: ");
-                console.log(objWithStartTime);
-            }
-            const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']);
-            if (!objWithEndTimeMoment.isValid()) {
-                objAry[i]['end_time_uncertain'] = true;
-            } else {
                 objAry[i]['end_time_uncertain'] = false;
+                objWithStartTime.setSeconds(0);
+                objWithStartTime.setMinutes(0);
+                objWithStartTime.setHours(0);
+                objWithEndTime.setSeconds(59);
+                objWithEndTime.setMinutes(59);
+                objWithEndTime.setHours(23);
+            } else {
+                const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']);
+                if (!objWithStartTimeMoment.isValid()) {
+                    objAry[i]['start_time_uncertain'] = true;
+                } else {
+                    objAry[i]['start_time_uncertain'] = false;
+                }            
+                objWithStartTime = objWithStartTimeMoment.toDate();
+                const objWithEndTimeMoment = momentTz.utc(endTime, ['hh:mm a', 'h:mm a']);
+                if (!objWithEndTimeMoment.isValid()) {
+                    objAry[i]['end_time_uncertain'] = true;
+                } else {
+                    objAry[i]['end_time_uncertain'] = false;
+                }
+                objWithEndTime = objWithEndTimeMoment.toDate();
+                objWithStartTime.setFullYear(objWithStartDate.getFullYear());
+                objWithStartTime.setMonth(objWithStartDate.getMonth());
+                objWithStartTime.setDate(objWithStartDate.getDate());
+                objWithEndTime.setFullYear(objWithEndDate.getFullYear());
+                objWithEndTime.setMonth(objWithEndDate.getMonth());
+                objWithEndTime.setDate(objWithEndDate.getDate());
             }
-            var objWithEndTime = objWithEndTimeMoment.toDate();
-            objWithStartTime.setFullYear(objWithStartDate.getFullYear());
-            objWithStartTime.setMonth(objWithStartDate.getMonth());
-            objWithStartTime.setDate(objWithStartDate.getDate());
-            objWithEndTime.setFullYear(objWithEndDate.getFullYear());
-            objWithEndTime.setMonth(objWithEndDate.getMonth());
-            objWithEndTime.setDate(objWithEndDate.getDate());
+            
             try {
                 objAry[i]['start_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithStartTime));
                 objAry[i]['end_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithEndTime));
