@@ -30,7 +30,7 @@ let db = firebase.firestore();
 http.createServer(
     function (req, res) { 
         res.writeHead(200, {'Content-Type': 'text/plain'}); 
-        res.send('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate\n'); })
+        res.end('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate\n'); })
             .listen(process.env.PORT || 5000);
 var twelve = moment.tz("2020-02-02 00:00", "America/North_Dakota/Center");
 var twelveUTC = twelve.utc();
