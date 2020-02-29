@@ -30,11 +30,12 @@ let db = firebase.firestore();
 http.createServer(
     function (req, res) { 
         res.writeHead(200, {'Content-Type': 'text/plain'}); 
-        res.end('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate\n'); })
+        res.end('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate'); })
             .listen(process.env.PORT || 5000);
-var twelve = moment.tz("2020-02-02 00:00", "America/North_Dakota/Center");
-var twelveUTC = twelve.utc();
-var UTChour = twelveUTC.hours();
+// Not using node-schedule anymore because using heroku schedule
+// var twelve = moment.tz("2020-02-02 00:00", "America/North_Dakota/Center");
+// var twelveUTC = twelve.utc();
+// var UTChour = twelveUTC.hours();
 // var j = schedule.scheduleJob({hour: UTChour, minute: 50}, function() {
 scrapeFromMainPage()
     .then((res) => {
@@ -254,9 +255,6 @@ async function collectEvents($, pageNum) {
                     var timeStr = $(elem).text();
                     timeStr = timeStr.trim();
                     dashIdx = timeStr.indexOf('–');
-                    if (dashIdx === -1) {
-                        dashIdx = timeStr.indexOf('–');
-                    }
                     startTime = timeStr.slice(0, dashIdx);
                     startTime = timeStr.trim();
                     endTime = timeStr.slice(dashIdx + 1);
@@ -264,6 +262,10 @@ async function collectEvents($, pageNum) {
                 }
             });
             const objWithStartDateMoment = moment(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
+            if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
+                console.log("START DATE MOMENT: ");
+                console.log(objWithStartDateMoment);
+            }
             if (!objWithStartDateMoment.isValid()) {
                 objAry[i]['start_date_uncertain'] = true;
             } else {
@@ -278,12 +280,20 @@ async function collectEvents($, pageNum) {
             }
             const objWithEndDate = objWithEndDateMoment.toDate();
             const objWithStartTimeMoment = moment(startTime, ['hh:mm a', 'h:mm a']);
+            if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
+                console.log("START TIME MOMENT: ");
+                console.log(objWithStartTimeMoment);
+            }
             if (!objWithStartTimeMoment.isValid()) {
                 objAry[i]['start_time_uncertain'] = true;
             } else {
                 objAry[i]['start_time_uncertain'] = false;
             }
             const objWithStartTime = objWithStartTimeMoment.toDate();
+            if (idAry[i] == '9ae4f91d-5b07-4c16-b0e8-26d351b3e362') {
+                console.log("DATE OBJ WITH START TIME: ");
+                console.log(objWithStartTime);
+            }
             const objWithEndTimeMoment = moment(endTime, ['hh:mm a', 'h:mm a']);
             if (!objWithEndTimeMoment.isValid()) {
                 objAry[i]['end_time_uncertain'] = true;
