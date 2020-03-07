@@ -256,15 +256,8 @@ async function collectEvents($, pageNum) {
                     if (dashIdx == -1) {
                         dashIdx = timeStr.indexOf('-');
                     }
-                    console.log("TIME STRING: ");
-                    console.log(timeStr);
-                    console.log("DASH IDX BEFORE SLICING START TIME: ");
-                    console.log(dashIdx);
                     startTime = timeStr.slice(0, dashIdx);
-                    console.log("START TIME STRING AFTER SLICING: " + startTime);
-                    console.log("TIME STRING AFTER MANUAL SLICING: " + timeStr.slice(0,4));
-                    startTime = timeStr.trim();
-                    console.log("START TIME AFTER TRIMMING: " + startTime);
+                    startTime = startTime.trim();
                     endTime = timeStr.slice(dashIdx + 1);
                     endTime = endTime.trim();
                 }
@@ -298,7 +291,7 @@ async function collectEvents($, pageNum) {
                 objAry[i]['start_time_uncertain'] = false;
                 objAry[i]['end_time_uncertain'] = false;
                 objWithStartTime.setHours(0, 0, 0, 0);
-                objWithEndTime.setHours(23, 59, 0, 0);
+                objWithEndTime.setHours(23, 59, 59, 999);
                 console.log("START TIME INSIDE ALL DAY IF STATEMENT: ");
                 console.log(objWithStartTime);
                 console.log("END TIME INSIDE ALL DAY IF STATEMENT: ")
