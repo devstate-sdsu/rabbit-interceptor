@@ -250,6 +250,7 @@ async function collectEvents($, pageNum) {
                 if (idx === 1) {
                     var dashIdx = -1;
                     var timeStr = $(elem).text();
+                    timeStr = "All-Day";
                     timeStr = timeStr.trim();
                     dashIdx = timeStr.indexOf('–');
                     if (dashIdx == -1) {
@@ -311,6 +312,10 @@ async function collectEvents($, pageNum) {
                 objWithEndTime.setMonth(objWithEndDate.getMonth());
                 objWithEndTime.setDate(objWithEndDate.getDate());
             }
+            console.log("START TIME: ");
+            console.log(objWithStartTime);
+            console.log("END TIME: ")
+            console.log(objWithEndTime);
             
             try {
                 objAry[i]['start_time'] = firebase.firestore.Timestamp.fromDate(new Date(objWithStartTime));
