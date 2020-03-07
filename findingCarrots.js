@@ -285,11 +285,17 @@ async function collectEvents($, pageNum) {
 
             var objWithStartTime = new Date();
             var objWithEndTime = new Date();
+            print("START TIME STRING: " + startTime);
+            print("END TIME STRING" + endTime);
             if (startTime === 'All' && endTime === 'Day') {
                 objAry[i]['start_time_uncertain'] = false;
                 objAry[i]['end_time_uncertain'] = false;
                 objWithStartTime.setHours(0, 0, 0, 0);
                 objWithEndTime.setHours(23, 59, 0, 0);
+                console.log("START TIME INSIDE ALL DAY IF STATEMENT: ");
+                console.log(objWithStartTime);
+                console.log("END TIME INSIDE ALL DAY IF STATEMENT: ")
+                console.log(objWithEndTime);
             } else {
                 const objWithStartTimeMoment = momentTz.utc(startTime, ['hh:mm a', 'h:mm a']);
                 if (!objWithStartTimeMoment.isValid()) {
