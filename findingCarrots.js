@@ -74,8 +74,6 @@ async function getAllDocumentIds(ids) {
 }
 
 async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
-    console.log("DELETE REMOVED AND EXPIRED EVENTS TIME: ");
-    console.log(firebase.firestore.Timestamp.fromDate(new Date(Date.now())));
     const idsAry = Array.from(idsRemovedFromSite);
     let batch = db.batch();
     for (let i = 0; i < idsAry.length; i++) {
@@ -92,7 +90,7 @@ async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
     });
     batch = db.batch();
     await db.collection(eventsCollectionName)
-        .where('end_time', '<', firebase.firestore.Timestamp.fromDate(momentTz.utc(momentTz().format("HH:mm"), "HH:mm").toDate()))
+        .where('end_time', '<', firebase.firestore.Timestamp.fromDate(new Date(Date.now())))
         .get()
         .then((snapshot) => {
             snapshot.forEach(doc => {
