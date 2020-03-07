@@ -285,8 +285,8 @@ async function collectEvents($, pageNum) {
 
             var objWithStartTime = new Date();
             var objWithEndTime = new Date();
-            print("START TIME STRING: " + startTime);
-            print("END TIME STRING" + endTime);
+            console.log("START TIME STRING: " + startTime);
+            console.log("END TIME STRING" + endTime);
             if (startTime === 'All' && endTime === 'Day') {
                 objAry[i]['start_time_uncertain'] = false;
                 objAry[i]['end_time_uncertain'] = false;
