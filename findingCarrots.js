@@ -1,15 +1,35 @@
+/*** 
+ * Welcome to Rabbit Interceptor.
+ * We are a highly technical scraper service, a provider of 
+ * precision scraping of the SDState.edu events listings. 
+ * We are currently deployed to Heroku. Heroku Scheduler 
+ * executes "node findingCarrots.js" every day at 12:30 a.m..
+ * The way you update the deployment that's on Heroku
+ * is by updating the master branch on our devstate-sdsu
+ * rabbit-interceptor repo. This can be done by either
+ * pushing directly to master branch, or by making a
+ * pull request.
+ */
+
+
 const request = require("request-promise");
 const cheerio = require("cheerio");
 const URL = require("url-parse");
 const firebase = require("firebase");
 const momentTz = require("moment-timezone");
-var { testing } = require('./config');
 var schedule = require('node-schedule');
 var http = require('http');
+
+// Variables vary according to whether we are testing or not
+var { testing } = require('./config');
 const eventsCollectionName = testing ? 'testEventsCol' : 'eventsCol';
 const pagesToScrape = testing ? 3 : 20;
 
-// Your web app's Firebase configuration
+// This configuration is closely tied to how things are set up 
+// in Heroku. In Heroku, we could add environment variables for an
+// app. This means that we do not have to explicitly enter it 
+// below, and that we also do not need a separate file to store
+// the env vars.
 var firebaseConfig = {
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,
@@ -26,7 +46,10 @@ firebase.initializeApp(firebaseConfig);
 let db = firebase.firestore();
 
 /* MAIN FUNCTION */
-// The following line is to prevent heroku from crashing for not listening to port
+// The following http.createServer function is called is to prevent heroku 
+// from crashing for not listening to port.
+// If you'd like to see what happens when you remove it, you can do so
+// and then check heroku logs.
 http.createServer(
     function (req, res) { 
         res.writeHead(200, {'Content-Type': 'text/plain'}); 
@@ -54,8 +77,6 @@ scrapeFromMainPage()
 /* MAIN FUNCTION ENDS */
 
 
-
-
 async function getAllDocumentIds(ids) {
     let eventsRef = db.collection(eventsCollectionName);
     await eventsRef.get()
@@ -74,6 +95,17 @@ async function getAllDocumentIds(ids) {
 }
 
 async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
+    // Every single *event* entry that's been added to the database by the scraper is 
+    // formatted in UTC. But not in the way you would intuitively think.
+    // For example, 8:00AM UTC-6 (Brookings time without Daylight Savings) will be
+    // stored as 8:00AM UTC. Also, 8:00AM UTC-5 (Brookings time with Daylight Savings)
+    // will also be stored as 8:00AM UTC. 
+    // We are not storing in local time to prevent htis one scenario: Imagine a weekly recurring event,
+    // that goes from 4-5pm. In our All Events listing, users will see multiple events.
+    // Let's say we're in March and DST starts on March 8. The listings that come 
+    // before March 8 will be displayed as 4-5pm. However, the listings that come
+    // after March 8 will be displayed as 5-6pm. We don't want that! 
+    // So, in the server we store as UTC, and in our app we display it as UTC. 
     console.log("Expiry time: ");
     console.log(firebase.firestore.Timestamp.fromDate(momentTz.utc("00:30", "HH:mm").toDate()));
     const idsAry = Array.from(idsRemovedFromSite);
@@ -113,26 +145,35 @@ async function deleteRemovedAndExpiredEvents(idsRemovedFromSite) {
 }
 
 async function scrapeFromMainPage() {
+
+    // At first, we assume every document needs to be removed.
+    // After the scraper runs, we remove the documents that still exist
+    // from this list of documents to be removed. So what's left in the
+    // list are the ids of events that have been removed from the SDState website.
     const idsRemovedFromSite = new Set();
     await getAllDocumentIds(idsRemovedFromSite);
     const base = "https://www.sdstate.edu/events/list?department=All&title=&page=";
+
+    // Separating masterObj into documents to store only the necessary event fields,
+    // and into documentIds to store the documentIds. 
+    // Because we don't want to store documentId as a field, but as a documentId
+    // instead. 
     let masterObj = {};
     masterObj['documents'] = [];
     masterObj['documentIds'] = [];
     for (let i = 0; i < pagesToScrape; i++) {
+        // The following line is to ensure eslint does not throw an error
         /* eslint-disable no-await-in-loop */
         const pageToVisit = base + i.toString();
         console.log("Visiting page: ", pageToVisit);
         masterObj = await collectEventsPromise(pageToVisit, masterObj, i);
     }
-    const allIdxs = [];
     for (let i = 0; i < masterObj.documentIds.length; i++) {
         freshDocId = masterObj.documentIds[i];
         if (idsRemovedFromSite.has(freshDocId)) {
             idsRemovedFromSite.delete(freshDocId);
         }
     }
-
     await deleteRemovedAndExpiredEvents(idsRemovedFromSite);
     return masterObj;
 }
@@ -192,11 +233,18 @@ async function collectEvents($, pageNum) {
     // Go into details page
     for (let i = 0; i < detailUrlAry.length; i++) {
         const url = detailUrlAry[i];
+        // Possibly could make scraper faster by changing the following
+        // await inside a for loop to a Promise.all() thingy. 
         await request(url)
         .then((body) => {
             let $$ = cheerio.load(body);
 
             // Scrape location
+            // Possible location formats: 
+            // Off-Campus , Georgia Morse Middle School in Pierre, SD
+            // Pugsley Center , 105
+            // On-Campus
+            // Agricultural Heritage Museum
             const locationToken = 'span.event__detail:has(a)';
             $$(locationToken).each((idx, elem) => {
                 let str = $$(elem).text();
@@ -224,6 +272,12 @@ async function collectEvents($, pageNum) {
             });
 
             // Scrape date time
+            // Possible date formats:
+            // Saturday, Mar. 14, 2020
+            // Monday, Mar. 9, 2020 – Monday, Apr. 27, 2020
+            // Possible time formats:
+            // 10:00 am – 1:00 pm
+            // All-Day
             var startDate = '';
             var endDate = '';
             var startTime = '';
@@ -262,10 +316,16 @@ async function collectEvents($, pageNum) {
                 }
             });
 
-
+            // NOTE ONE
             // We are using UTC throughout this scraper because if we use exact, accurate-to-our-timezone time, 
             // some recurring events that happen at the same time every week will appear to happen at different
             // times this week than next week if this weekend is the beginning/end of Daylight Savings Time. 
+            // NOTE TWO
+            // You will see a two representations of the start/end date/time below.
+            // The first is a Moment object. And the second is a Javascript Date object. 
+            // We are using Moment because it parses dates better, and has useful functions.
+            // Then we convert to Date because firebase firestore has a Timestamp method that converts
+            // Date to firestore Timestamp. 
             const objWithStartDateMoment = momentTz.utc(startDate, ['dddd, MMM. D, YYYY', 'dddd, MMM. DD, YYYY']);
             if (!objWithStartDateMoment.isValid()) {
                 objAry[i]['start_date_uncertain'] = true;
@@ -402,3 +462,5 @@ async function collectEvents($, pageNum) {
         documentIds: idAry
     };
 }
+
+
