@@ -66,13 +66,14 @@ scrapeFromMainPage()
         }
         batch.commit().then(() => {
             console.log("OH YES ADDING/UPDATING EVENTS WORKED")
-            return;
+            process.exit(1);
         }).catch(e => {
             console.log("Error batch committing document adding/updating");
+            process.exit(1);
         });
     }).catch((e) => {
         console.log("Error scraping from main page" + e);
-        return "OOPSIE";
+        process.exit(1);
     });
 /* MAIN FUNCTION ENDS */
 
