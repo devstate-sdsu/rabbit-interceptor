@@ -50,7 +50,7 @@ let db = firebase.firestore();
 // from crashing for not listening to port.
 // If you'd like to see what happens when you remove it, you can do so
 // and then check heroku logs.
-http.createServer(
+let server = http.createServer(
     function (req, res) { 
         res.writeHead(200, {'Content-Type': 'text/plain'}); 
         res.end('the rabbit-interceptor is intercepting all the carrots sent by the mojojosdstate'); })
@@ -66,13 +66,16 @@ scrapeFromMainPage()
         }
         batch.commit().then(() => {
             console.log("OH YES ADDING/UPDATING EVENTS WORKED")
+            server.close();
             return("SUCCESS");
         }).catch(e => {
             console.log("Error batch committing document adding/updating");
+            server.close();
             return("Error adding/updating events");
         });
     }).catch((e) => {
         console.log("Error scraping from main page" + e);
+        server.close();
         return("Error scraping events");
     });
 /* MAIN FUNCTION ENDS */
